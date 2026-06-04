@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin · Destino Escalada</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+
+<!-- LOGIN -->
+<div id="login-screen" style="position:fixed;inset:0;background:#0d0d0d;display:flex;align-items:center;justify-content:center;z-index:1000">
+  <div style="background:#161616;border:1px solid #2e2e2e;border-radius:16px;padding:36px 32px;width:360px;max-width:90vw;text-align:center">
+    <img src="logo.png" alt="Destino" style="max-width:160px;filter:invert(1) brightness(1.5);margin:0 auto 8px;display:block">
+    <div style="font-size:11px;color:#5a5650;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">Panel de administración</div>
+    <div class="form-group" style="text-align:left">
+      <label class="form-label">Clave de acceso</label>
+      <input type="password" class="form-input" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="abtn abtn-primary" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:8px">
+      <i class="ti ti-login"></i> Entrar
+    </button>
+    <div style="font-size:11px;color:#5a5650;margin-top:14px">Clave por defecto: <span style="font-family:'DM Mono',monospace;color:#c8f060">admin123</span></div>
+  </div>
+</div>
+
+<div class="admin-wrap" id="admin-app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="logo.png" alt="Destino">
+      <div class="sub">Admin</div>
+    </div>
+    <div class="nav-label">Gestión</div>
+    <div class="nav-item active" data-section="servicios" onclick="showSection('servicios',this)"><i class="ti ti-layout-grid"></i> <span>Servicios</span></div>
+    <div class="nav-item" data-section="horarios" onclick="showSection('horarios',this)"><i class="ti ti-calendar-time"></i> <span>Horarios</span></div>
+    <div class="nav-item" data-section="reservas" onclick="showSection('reservas',this)"><i class="ti ti-ticket"></i> <span>Reservas</span></div>
+    <div class="nav-label">Sistema</div>
+    <div class="nav-item" data-section="config" onclick="showSection('config',this)"><i class="ti ti-settings"></i> <span>Configuración</span></div>
+    <div class="nav-item" onclick="logout()" style="margin-top:auto"><i class="ti ti-logout"></i> <span>Cerrar sesión</span></div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-admin">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Servicios</div>
+        <div class="topbar-sub" id="topbar-sub">Gestiona los servicios que ofreces</div>
+      </div>
+      <button class="abtn abtn-primary" id="topbar-action" onclick="handleTopAction()"><i class="ti ti-plus"></i> Nuevo servicio</button>
+    </div>
+
+    <div class="content-area">
+
+      <!-- SERVICIOS -->
+      <div class="asection active" id="section-servicios">
+        <div class="services-grid" id="services-grid"></div>
+      </div>
+
+      <!-- HORARIOS -->
+      <div class="asection" id="section-horarios">
+        <p style="font-size:12px;color:#5a5650;margin-bottom:14px">Selecciona un servicio para ver y editar sus horarios</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="schedule-selector"></div>
+        <div id="schedule-content">
+          <div class="empty-state"><i class="ti ti-calendar-off" style="font-size:36px;display:block;margin-bottom:10px"></i>Selecciona un servicio arriba</div>
+        </div>
+      </div>
+
+      <!-- RESERVAS -->
+      <div class="asection" id="section-reservas">
+        <div class="stat-row">
+          <div class="stat-card accent"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total reservas</div></div>
+          <div class="stat-card teal"><div class="stat-num" id="stat-today">0</div><div class="stat-label">Hoy</div></div>
+          <div class="stat-card purple"><div class="stat-num" id="stat-week">0</div><div class="stat-label">Esta semana</div></div>
+          <div class="stat-card amber"><div class="stat-num" id="stat-pending">0</div><div class="stat-label">Pendientes</div></div>
+        </div>
+        <div style="margin-bottom:16px">
+          <select class="form-input" style="width:240px" id="booking-filter" onchange="renderBookings()">
+            <option value="all">Todas las reservas</option>
+          </select>
+        </div>
+        <div id="bookings-list"></div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="asection" id="section-config">
+        <div style="max-width:480px">
+          <div style="background:#161616;border:1px solid #2e2e2e;border-radius:12px;padding:24px">
+            <h3 style="font-size:15px;font-weight:600;margin-bottom:14px;color:#f0ede8">Clave de administración</h3>
+            <p style="font-size:13px;color:#9a9590;margin-bottom:16px">Cambia la clave que protege el panel.</p>
+            <div class="form-group">
+              <label class="form-label">Clave actual</label>
+              <input type="password" class="form-input" id="cur-pass">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nueva clave</label>
+              <input type="password" class="form-input" id="new-pass">
+            </div>
+            <button class="abtn abtn-primary" onclick="changePass()"><i class="ti ti-lock"></i> Actualizar clave</button>
+          </div>
+
+          <div style="background:#161616;border:1px solid #2e2e2e;border-radius:12px;padding:24px;margin-top:16px">
+            <h3 style="font-size:15px;font-weight:600;margin-bottom:14px;color:#f0ede8">Exportar / Importar datos</h3>
+            <p style="font-size:13px;color:#9a9590;margin-bottom:16px">Guarda una copia de seguridad o restaura los datos.</p>
+            <div style="display:flex;gap:8px">
+              <button class="abtn abtn-ghost" onclick="exportData()"><i class="ti ti-download"></i> Exportar</button>
+              <button class="abtn abtn-ghost" onclick="document.getElementById('import-file').click()"><i class="ti ti-upload"></i> Importar</button>
+              <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+            </div>
+          </div>
+
+          <div style="background:#161616;border:1px solid #2e2e2e;border-radius:12px;padding:24px;margin-top:16px">
+            <h3 style="font-size:15px;font-weight:600;margin-bottom:14px;color:#f0ede8">Enlace para clientes</h3>
+            <p style="font-size:13px;color:#9a9590;margin-bottom:12px">Comparte esta página con tus clientes para que reserven:</p>
+            <div style="background:#1f1f1f;border:1px solid #2e2e2e;border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:12px;color:#40d4a8;word-break:break-all" id="public-url">index.html</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: NUEVO SERVICIO -->
+<div class="modal-overlay" id="modal-service">
+  <div class="modal">
+    <h3 id="modal-service-title">Nuevo servicio</h3>
+    <div class="form-group">
+      <label class="form-label">Nombre del servicio</label>
+      <input type="text" class="form-input" id="svc-name" placeholder="ej: Escalada guiada para adultos">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción corta</label>
+      <input type="text" class="form-input" id="svc-desc" placeholder="ej: Sesión guiada de 2 horas">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-input" id="svc-cat" onchange="toggleEl()">
+          <option value="escalada">🧗 Escalada</option>
+          <option value="danza">🎪 Danza aérea</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cupos por defecto</label>
+        <input type="number" class="form-input" id="svc-cupos" value="8" min="1" max="50">
+      </div>
+    </div>
+    <div class="form-group" id="el-group" style="display:none">
+      <label class="form-label">Elemento (danza aérea)</label>
+      <select class="form-input" id="svc-elemento">
+        <option value="">No aplica</option>
+        <option value="lira">Solo lira</option>
+        <option value="tela">Solo tela</option>
+        <option value="ambos">Lira y tela</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="abtn abtn-ghost" onclick="closeModal('modal-service')">Cancelar</button>
+      <button class="abtn abtn-primary" onclick="saveService()"><i class="ti ti-check"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NUEVO HORARIO -->
+<div class="modal-overlay" id="modal-slot">
+  <div class="modal">
+    <h3>Agregar horario</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Día de la semana</label>
+        <select class="form-input" id="slot-day">
+          <option value="1">Lunes</option>
+          <option value="2">Martes</option>
+          <option value="3">Miércoles</option>
+          <option value="4">Jueves</option>
+          <option value="5">Viernes</option>
+          <option value="6">Sábado</option>
+          <option value="0">Domingo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hora</label>
+        <input type="time" class="form-input" id="slot-time" value="09:00">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Cupos máximos</label>
+        <input type="number" class="form-input" id="slot-cupos" value="8" min="1" max="50">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duración (min)</label>
+        <input type="number" class="form-input" id="slot-dur" value="60" step="15">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="abtn abtn-ghost" onclick="closeModal('modal-slot')">Cancelar</button>
+      <button class="abtn abtn-primary" onclick="saveSlot()"><i class="ti ti-check"></i> Agregar</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const DAYS_FULL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let appData = loadData();
+let editingServiceId = null;
+let activeServiceForSchedule = null;
+
+// LOGIN
+function doLogin(){
+  const p = document.getElementById('login-pass').value;
+  if(p === appData.password){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('admin-app').style.display='flex';
+    document.getElementById('public-url').textContent = window.location.href.replace('admin.html','index.html');
+    renderServices();
+    renderScheduleSelector();
+    renderBookings();
+  } else {
+    alert('Clave incorrecta');
+  }
+}
+
+function logout(){
+  document.getElementById('login-pass').value='';
+  document.getElementById('admin-app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+}
+
+// SECTIONS
+function showSection(s, el){
+  document.querySelectorAll('.asection').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('section-'+s).classList.add('active');
+  if(el) el.classList.add('active');
+  const titles = {
+    servicios:['Servicios','Gestiona los servicios que ofreces'],
+    horarios:['Horarios','Configura días, horas y cupos'],
+    reservas:['Reservas','Reservas recibidas de tus clientes'],
+    config:['Configuración','Ajustes del sistema']
+  };
+  document.getElementById('topbar-title').textContent = titles[s][0];
+  document.getElementById('topbar-sub').textContent = titles[s][1];
+  const actions = {
+    servicios:'<i class="ti ti-plus"></i> Nuevo servicio',
+    horarios:'<i class="ti ti-plus"></i> Agregar horario',
+    reservas:'',
+    config:''
+  };
+  const btn = document.getElementById('topbar-action');
+  btn.innerHTML = actions[s] || '';
+  btn.style.display = actions[s] ? 'inline-flex' : 'none';
+}
+
+function handleTopAction(){
+  const active = document.querySelector('.asection.active').id;
+  if(active === 'section-servicios') openServiceModal();
+  if(active === 'section-horarios') openSlotModal();
+}
+
+// SERVICIOS
+function renderServices(){
+  const grid = document.getElementById('services-grid');
+  grid.innerHTML = '';
+  appData.services.forEach(svc => {
+    const slots = (appData.schedules[svc.id]||[]).filter(s=>s.active).length;
+    grid.innerHTML += `<div class="service-card" onclick="goToSchedules('${svc.id}')">
+      <div class="service-actions">
+        <div class="icon-btn" onclick="event.stopPropagation();editService('${svc.id}')"><i class="ti ti-pencil"></i></div>
+        <div class="icon-btn" onclick="event.stopPropagation();deleteService('${svc.id}')"><i class="ti ti-trash"></i></div>
+      </div>
+      <div class="service-badge ${svc.cat==='escalada'?'badge-escalada':'badge-danza'}">${svc.cat==='escalada'?'🧗 Escalada':'🎪 Danza aérea'}</div>
+      <div class="service-name">${svc.name}</div>
+      <div class="service-desc">${svc.desc}${svc.elemento?` · <strong>${svc.elemento}</strong>`:''}</div>
+      <div class="service-meta">
+        <span><i class="ti ti-calendar" style="vertical-align:-2px"></i> ${slots} horarios</span>
+        <span><i class="ti ti-users" style="vertical-align:-2px"></i> ${svc.cupos} cupos/slot</span>
+      </div>
+    </div>`;
+  });
+  grid.innerHTML += `<div class="add-service-card" onclick="openServiceModal()"><i class="ti ti-plus" style="font-size:24px"></i><span style="font-size:12px">Nuevo servicio</span></div>`;
+}
+
+function goToSchedules(id){
+  const navItem = document.querySelector('[data-section="horarios"]');
+  showSection('horarios', navItem);
+  renderScheduleSelector(id);
+  renderSchedules(id);
+}
+
+function renderScheduleSelector(selected){
+  const sel = document.getElementById('schedule-selector');
+  sel.innerHTML = '';
+  appData.services.forEach(svc => {
+    sel.innerHTML += `<div class="chip ${selected===svc.id?'active':''}" onclick="renderSchedules('${svc.id}');setChip(this)">${svc.name}</div>`;
+  });
+  if(selected) activeServiceForSchedule = selected;
+}
+
+function setChip(el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function renderSchedules(svcId){
+  activeServiceForSchedule = svcId;
+  const slots = appData.schedules[svcId] || [];
+  const container = document.getElementById('schedule-content');
+  if(!slots.length){
+    container.innerHTML = `<div class="empty-state" style="margin-top:16px"><i class="ti ti-calendar-off" style="font-size:36px;display:block;margin-bottom:10px"></i>Sin horarios. Usa el botón "Agregar horario" arriba.</div>`;
+    return;
+  }
+  const sorted = [...slots].sort((a,b)=>a.day-b.day || a.time.localeCompare(b.time));
+  container.innerHTML = `
+    <div class="schedule-table">
+      <div class="schedule-row header"><span>Día</span><span>Hora</span><span>Duración</span><span>Cupos</span><span>Activo</span></div>
+      ${sorted.map(sl => `
+        <div class="schedule-row">
+          <span><span class="day-pill">${DAYS_FULL[sl.day]}</span></span>
+          <span><span class="time-tag">${sl.time}</span></span>
+          <span style="font-size:12px;color:#5a5650">${sl.dur} min</span>
+          <span class="cupos-control">
+            <div class="cupos-btn" onclick="changeCupos('${svcId}','${sl.id}',-1)">−</div>
+            <span class="cupos-num">${sl.cupos}</span>
+            <div class="cupos-btn" onclick="changeCupos('${svcId}','${sl.id}',1)">+</div>
+          </span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <button class="toggle-switch ${sl.active?'on':'off'}" onclick="toggleSlot('${svcId}','${sl.id}')"><div class="toggle-knob"></div></button>
+            <div class="icon-btn" onclick="deleteSlot('${svcId}','${sl.id}')"><i class="ti ti-trash" style="font-size:13px"></i></div>
+          </span>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function changeCupos(svcId, slotId, delta){
+  const sl = appData.schedules[svcId].find(s=>s.id===slotId);
+  if(!sl) return;
+  sl.cupos = Math.max(1, sl.cupos + delta);
+  saveData(appData);
+  renderSchedules(svcId);
+}
+
+function toggleSlot(svcId, slotId){
+  const sl = appData.schedules[svcId].find(s=>s.id===slotId);
+  if(sl){ sl.active = !sl.active; saveData(appData); renderSchedules(svcId); }
+}
+
+function deleteSlot(svcId, slotId){
+  if(!confirm('¿Eliminar este horario?')) return;
+  appData.schedules[svcId] = appData.schedules[svcId].filter(s=>s.id!==slotId);
+  saveData(appData);
+  renderSchedules(svcId);
+  renderServices();
+}
+
+// MODALS
+function openServiceModal(editId){
+  editingServiceId = editId || null;
+  document.getElementById('modal-service-title').textContent = editId ? 'Editar servicio' : 'Nuevo servicio';
+  if(editId){
+    const svc = appData.services.find(s=>s.id===editId);
+    document.getElementById('svc-name').value = svc.name;
+    document.getElementById('svc-desc').value = svc.desc;
+    document.getElementById('svc-cat').value = svc.cat;
+    document.getElementById('svc-cupos').value = svc.cupos;
+    document.getElementById('svc-elemento').value = svc.elemento || '';
+  } else {
+    document.getElementById('svc-name').value = '';
+    document.getElementById('svc-desc').value = '';
+    document.getElementById('svc-cat').value = 'escalada';
+    document.getElementById('svc-cupos').value = 8;
+    document.getElementById('svc-elemento').value = '';
+  }
+  toggleEl();
+  document.getElementById('modal-service').classList.add('open');
+}
+
+function toggleEl(){
+  document.getElementById('el-group').style.display = document.getElementById('svc-cat').value === 'danza' ? 'flex' : 'none';
+}
+
+function editService(id){ openServiceModal(id); }
+
+function deleteService(id){
+  if(!confirm('¿Eliminar este servicio y todos sus horarios?')) return;
+  appData.services = appData.services.filter(s=>s.id!==id);
+  delete appData.schedules[id];
+  saveData(appData);
+  renderServices();
+  renderScheduleSelector();
+}
+
+function saveService(){
+  const name = document.getElementById('svc-name').value.trim();
+  if(!name){ alert('Escribe el nombre del servicio'); return; }
+  if(editingServiceId){
+    const svc = appData.services.find(s=>s.id===editingServiceId);
+    svc.name = name;
+    svc.desc = document.getElementById('svc-desc').value.trim();
+    svc.cat = document.getElementById('svc-cat').value;
+    svc.cupos = parseInt(document.getElementById('svc-cupos').value);
+    svc.elemento = document.getElementById('svc-elemento').value;
+  } else {
+    const id = 's' + Date.now();
+    appData.services.push({
+      id, name,
+      desc: document.getElementById('svc-desc').value.trim(),
+      cat: document.getElementById('svc-cat').value,
+      cupos: parseInt(document.getElementById('svc-cupos').value),
+      elemento: document.getElementById('svc-elemento').value
+    });
+    appData.schedules[id] = [];
+  }
+  saveData(appData);
+  closeModal('modal-service');
+  renderServices();
+  renderScheduleSelector();
+}
+
+function openSlotModal(){
+  if(!activeServiceForSchedule){
+    if(appData.services.length === 0){ alert('Crea un servicio primero'); return; }
+    activeServiceForSchedule = appData.services[0].id;
+    renderScheduleSelector(activeServiceForSchedule);
+    renderSchedules(activeServiceForSchedule);
+  }
+  document.getElementById('modal-slot').classList.add('open');
+}
+
+function saveSlot(){
+  const id = 'sc' + Date.now();
+  const slot = {
+    id,
+    day: parseInt(document.getElementById('slot-day').value),
+    time: document.getElementById('slot-time').value,
+    cupos: parseInt(document.getElementById('slot-cupos').value),
+    dur: parseInt(document.getElementById('slot-dur').value),
+    active: true
+  };
+  if(!appData.schedules[activeServiceForSchedule]) appData.schedules[activeServiceForSchedule] = [];
+  appData.schedules[activeServiceForSchedule].push(slot);
+  saveData(appData);
+  closeModal('modal-slot');
+  renderSchedules(activeServiceForSchedule);
+  renderServices();
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+
+// RESERVAS
+function renderBookings(){
+  // Recargar para captar nuevas reservas del cliente
+  const fresh = loadData();
+  appData.bookings = fresh.bookings || [];
+
+  const list = document.getElementById('bookings-list');
+  const filter = document.getElementById('booking-filter');
+  if(filter.options.length === 1){
+    appData.services.forEach(s => filter.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+  }
+  let bookings = appData.bookings || [];
+  if(filter.value !== 'all') bookings = bookings.filter(b=>b.serviceId===filter.value);
+
+  // Stats (con todas las reservas)
+  const all = appData.bookings || [];
+  document.getElementById('stat-total').textContent = all.length;
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('stat-today').textContent = all.filter(b=>b.date===today).length;
+  const weekEnd = new Date();
+  weekEnd.setDate(weekEnd.getDate()+7);
+  document.getElementById('stat-week').textContent = all.filter(b=>new Date(b.date)<=weekEnd && new Date(b.date)>=new Date()).length;
+  document.getElementById('stat-pending').textContent = all.filter(b=>b.status==='pending').length;
+
+  if(!bookings.length){
+    list.innerHTML = `<div class="empty-state"><i class="ti ti-ticket-off" style="font-size:36px;display:block;margin-bottom:10px"></i>Aún no hay reservas. Cuando tus clientes reserven, aparecerán aquí.</div>`;
+    return;
+  }
+
+  // Sort by date (most recent first)
+  bookings.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+
+  list.innerHTML = bookings.map(b => {
+    const svc = appData.services.find(s=>s.id===b.serviceId);
+    return `<div class="booking-card">
+      <div>
+        <div class="booking-name">${b.name} ${b.lastname}</div>
+        <div class="booking-email">${b.email}</div>
+        <div style="margin-top:8px">
+          <span class="booking-detail"><i class="ti ti-layout-grid"></i>${svc?svc.name:'—'}</span>
+          ${b.elemento?`<span class="booking-detail"><i class="ti ti-tools"></i>${b.elemento}</span>`:''}
+          <span class="booking-detail"><i class="ti ti-calendar"></i>${b.date}</span>
+          <span class="booking-detail"><i class="ti ti-clock"></i>${b.time}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <span class="status-badge ${b.status==='pending'?'status-pending':b.status==='confirmed'?'status-confirmed':'status-cancelled'}">
+          ${b.status==='pending'?'Pendiente':b.status==='confirmed'?'Confirmada':'Cancelada'}
+        </span>
+        ${b.status==='pending'?`
+          <div style="display:flex;gap:6px">
+            <button class="abtn abtn-primary" style="padding:5px 11px;font-size:12px" onclick="updateBooking('${b.id}','confirmed')"><i class="ti ti-check"></i> Confirmar</button>
+            <button class="abtn abtn-danger" style="padding:5px 11px;font-size:12px" onclick="updateBooking('${b.id}','cancelled')">Cancelar</button>
+          </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateBooking(id, status){
+  const b = appData.bookings.find(x=>x.id===id);
+  if(b){
+    b.status = status;
+    saveData(appData);
+    renderBookings();
+  }
+}
+
+// CONFIG
+function changePass(){
+  const cur = document.getElementById('cur-pass').value;
+  const nw = document.getElementById('new-pass').value;
+  if(cur !== appData.password){ alert('Clave actual incorrecta'); return; }
+  if(nw.length < 6){ alert('La nueva clave debe tener al menos 6 caracteres'); return; }
+  appData.password = nw;
+  saveData(appData);
+  alert('Clave actualizada correctamente');
+  document.getElementById('cur-pass').value = '';
+  document.getElementById('new-pass').value = '';
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(appData,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `destino-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  if(!confirm('Esto reemplazará TODOS los datos actuales. ¿Continuar?')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if(!parsed.services) throw new Error('Archivo inválido');
+      appData = parsed;
+      saveData(appData);
+      alert('Datos importados correctamente');
+      renderServices();
+      renderScheduleSelector();
+      renderBookings();
+    } catch(err){
+      alert('Error al importar: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Refresh bookings every 30 seconds to catch new ones
+setInterval(()=>{
+  if(document.getElementById('section-reservas').classList.contains('active')){
+    renderBookings();
+  }
+}, 30000);
+</script>
+
+</body>
+</html>
